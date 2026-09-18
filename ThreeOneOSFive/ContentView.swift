@@ -409,7 +409,7 @@ struct ContentView: View {
         patchOperationBusy = true
         patchMessage = "PROCESSING — \(packageFilename)"
 
-        let project = item.project
+        let project = projectForSelectedMode(item.project)
         let projectID = item.id
 
         DispatchQueue.global(qos: .userInitiated).async {
@@ -462,6 +462,30 @@ struct ContentView: View {
         case applied
         case restored
         case unavailable(String)
+    }
+
+    private func projectForSelectedMode(_ project: PatchProject?) -> PatchProject? {
+        guard let project else { return nil }
+        let targetBundleID = tab == .max ? "com.dts.freefiremax" : "com.dts.freefireth"
+        var adapted = project
+        adapted.bundleIdentifiers = project.bundleIdentifiers.map {
+            $0 == "com.dts.freefireth" || $0 == "com.dts.freefiremax" ? targetBundleID : $0
+        }
+        adapted.directories = project.directories.map { directory in
+            var copy = directory
+            if copy.bundleID == "com.dts.freefireth" || copy.bundleID == "com.dts.freefiremax" {
+                copy.bundleID = targetBundleID
+            }
+            return copy
+        }
+        adapted.rules = project.rules.map { rule in
+            var copy = rule
+            if copy.bundleID == "com.dts.freefireth" || copy.bundleID == "com.dts.freefiremax" {
+                copy.bundleID = targetBundleID
+            }
+            return copy
+        }
+        return adapted
     }
 }
 
